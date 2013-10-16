@@ -43,12 +43,12 @@ class VaporAnimation extends jQueryPlugin
     max_speed: 200
     fade_in_perc: .40  # fraction of time to spend fading in and out
     fade_out_perc: 0 
-    src: '' 
+    img: false 
 
   _vapors: []
 
   defaultCount: ->
-    @options.count or Math.floor @viewSize() / ( @i.width * @i.height ) * @options.count_multiplier 
+    @options.count or Math.floor @viewSize() / ( @options.image.width * @options.image.height ) * @options.count_multiplier 
 
   viewSize: () ->
     @leastOf @boxSize($(window)), @boxSize(@$target)
@@ -72,11 +72,16 @@ class VaporAnimation extends jQueryPlugin
 
     @$target.append @$canvas
     @canvas = @$canvas[0]
-    @i = new Image()
-    @i.onload = @createVapors
-    @i.onerror = -> console.log "image #{@i.src} failed to load"
-    @i.src = @options.src
+    @options.image = $(@options.img)[0]
+    if @options.image.complete
+      @startAnimation() 
+    else
+      @options.image.onload = @startAnimation
+
+  startAnimation: =>
+    @updateVapors()
     $(window).on 'resize', @updateVapors
+    window.requestAnimationFrame @drawFrame
 
   drawFrame: (timestep) =>
     @canvas.width = @$target.width()
@@ -84,8 +89,7 @@ class VaporAnimation extends jQueryPlugin
     vapor.draw(timestep) for vapor in @_vapors
     window.requestAnimationFrame @drawFrame
 
-  updateVapors: ->
-    return unless @ready
+  updateVapors: =>
     newvapes = @defaultCount() - @_vapors.length
     if newvapes > 0 
       @_vapors.push new Vapor(@canvas, @options) for i in [0...newvapes]
@@ -94,12 +98,6 @@ class VaporAnimation extends jQueryPlugin
       start = @_vapors.length + newvapes
       @_vapors[i].destroy() for i in [start...@_vapors.length]
       @_vapors = @_vapors[0...start]
-
-  createVapors: =>
-    @options.image = @i
-    @ready = true
-    @updateVapors()
-    window.requestAnimationFrame @drawFrame 
 
   stop: ->
     v.destroy() for v in @_vapors

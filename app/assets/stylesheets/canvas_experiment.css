@@ -118,3 +118,7 @@ a:hover .tag {
 a:hover i:before {
   color: lightgray;
 }
+
+#preload {
+  display:none;
+}
