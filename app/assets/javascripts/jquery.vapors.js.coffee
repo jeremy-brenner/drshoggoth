@@ -18,7 +18,7 @@ class jQueryPlugin
   constructor: ( target, options ) ->
     @$target = $(target)    
     @options = @defaults
-
+    
     obj = @$target.data @name
     unless obj # append self or use current
       @$target.data @name, obj = @ 
@@ -30,7 +30,7 @@ class jQueryPlugin
     if typeof options == 'string'
       method = options
     else
-      @options = $.extend @options, options
+      @options = $.extend {}, @options, options
 
     @[method]()
 
@@ -43,7 +43,7 @@ class VaporAnimation extends jQueryPlugin
     max_speed: 200
     fade_in_perc: .40  # fraction of time to spend fading in and out
     fade_out_perc: 0 
-    src: 'vapor.png' 
+    src: '' 
 
   _vapors: []
 
@@ -59,20 +59,24 @@ class VaporAnimation extends jQueryPlugin
   leastOf: ( first, second ) ->
     if ( first < second ) then first else second
 
-  start: ->
+  randId: ->
+    "vape_can_#{Math.floor(Math.random()*100000)}"
+
+  start: =>
     @ready = false
-    @$canvas = $("<canvas>").css
+    @$canvas = $("<canvas id=#{@randId()}>").css
       position: 'absolute',
       top: 0,
-      left: 0
+      left: 0,
+      'z-index': 0
+
     @$target.append @$canvas
     @canvas = @$canvas[0]
     @i = new Image()
     @i.onload = @createVapors
-    @i.onerror = -> console.log "image #{i.src} failed to load"
+    @i.onerror = -> console.log "image #{@i.src} failed to load"
     @i.src = @options.src
     $(window).on 'resize', @updateVapors
-    window.requestAnimationFrame @drawFrame 
 
   drawFrame: (timestep) =>
     @canvas.width = @$target.width()
@@ -80,9 +84,8 @@ class VaporAnimation extends jQueryPlugin
     vapor.draw(timestep) for vapor in @_vapors
     window.requestAnimationFrame @drawFrame
 
-  updateVapors: =>
+  updateVapors: ->
     return unless @ready
-
     newvapes = @defaultCount() - @_vapors.length
     if newvapes > 0 
       @_vapors.push new Vapor(@canvas, @options) for i in [0...newvapes]
@@ -92,12 +95,11 @@ class VaporAnimation extends jQueryPlugin
       @_vapors[i].destroy() for i in [start...@_vapors.length]
       @_vapors = @_vapors[0...start]
 
-    console.log @_vapors.length
-
   createVapors: =>
     @options.image = @i
     @ready = true
     @updateVapors()
+    window.requestAnimationFrame @drawFrame 
 
   stop: ->
     v.destroy() for v in @_vapors
