@@ -114,3 +114,7 @@ a.tag:hover {
 a:hover .tag {
   background-color: lightgray;
 }
+
+a:hover i:before {
+  color: lightgray;
+}
