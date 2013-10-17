@@ -41,9 +41,7 @@ class VaporAnimation extends jQueryPlugin
     count_multiplier: 1
     min_speed: 50 #pixels per second
     max_speed: 200
-    fade_in_perc: .40  # fraction of time to spend fading in and out
-    fade_out_perc: 0 
-    img: false 
+    src: false 
 
   _vapors: []
 
@@ -54,17 +52,15 @@ class VaporAnimation extends jQueryPlugin
     @leastOf @boxSize($(window)), @boxSize(@$target)
 
   boxSize: ($box) ->
-    $box.width() * $box.height() 
+    $box.outerWidth() * $box.outerHeight() 
 
   leastOf: ( first, second ) ->
     if ( first < second ) then first else second
 
-  randId: ->
-    "vape_can_#{Math.floor(Math.random()*100000)}"
 
   start: =>
     @ready = false
-    @$canvas = $("<canvas id=#{@randId()}>").css
+    @$canvas = $("<canvas>").css
       position: 'absolute',
       top: 0,
       left: 0,
@@ -72,11 +68,9 @@ class VaporAnimation extends jQueryPlugin
 
     @$target.append @$canvas
     @canvas = @$canvas[0]
-    @options.image = $(@options.img)[0]
-    if @options.image.complete
-      @startAnimation() 
-    else
-      @options.image.onload = @startAnimation
+    @options.image = new Image()
+    @options.image.onload = @startAnimation
+    @options.image.src = @options.src
 
   startAnimation: =>
     @updateVapors()
@@ -84,8 +78,8 @@ class VaporAnimation extends jQueryPlugin
     window.requestAnimationFrame @drawFrame
 
   drawFrame: (timestep) =>
-    @canvas.width = @$target.width()
-    @canvas.height = @$target.height()
+    @canvas.width = @$target.outerWidth()
+    @canvas.height = @$target.outerHeight()
     vapor.draw(timestep) for vapor in @_vapors
     window.requestAnimationFrame @drawFrame
 
@@ -145,12 +139,6 @@ class Vapor
 
   startLeft: ->
     Math.floor @maxLeft() * Math.random() 
-
-  fadeInTime: ->
-    @duration * @options.fade_in_perc
-
-  fadeOutTime: ->
-    @duration * @options.fade_out_perc
 
   width: (t) ->
     @options.image.width * @scale(t)
