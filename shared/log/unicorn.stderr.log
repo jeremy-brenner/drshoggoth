@@ -1,8 +1,0 @@
-I, [2013-10-15T22:21:00.197723 #28945]  INFO -- : Refreshing Gem list
-I, [2013-10-15T22:21:04.642873 #28945]  INFO -- : unlinking existing socket=/var/www/drshoggoth/shared/.unicorn.sock
-I, [2013-10-15T22:21:04.643087 #28945]  INFO -- : listening on addr=/var/www/drshoggoth/shared/.unicorn.sock fd=11
-I, [2013-10-15T22:21:05.109241 #28945]  INFO -- : master process ready
-I, [2013-10-15T22:21:05.115850 #28952]  INFO -- : worker=1 ready
-I, [2013-10-15T22:21:05.116025 #28955]  INFO -- : worker=2 ready
-I, [2013-10-15T22:21:05.116131 #28958]  INFO -- : worker=3 ready
-I, [2013-10-15T22:21:05.139261 #28949]  INFO -- : worker=0 ready

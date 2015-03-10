@@ -39,8 +39,8 @@ class VaporAnimation extends jQueryPlugin
 
   defaults: 
     count_multiplier: 1
-    min_speed: 50 #pixels per second
-    max_speed: 200
+    min_speed: 60 #pixels per second
+    max_speed: 120
     src: false 
 
   _vapors: []
@@ -68,9 +68,11 @@ class VaporAnimation extends jQueryPlugin
 
     @$target.append @$canvas
     @canvas = @$canvas[0]
+    @context = @canvas.getContext "2d"
     @options.image = new Image()
     @options.image.onload = @startAnimation
     @options.image.src = @options.src
+    @timer = new Timer()
 
   startAnimation: =>
     @updateVapors()
@@ -78,12 +80,16 @@ class VaporAnimation extends jQueryPlugin
     window.requestAnimationFrame @drawFrame
 
   drawFrame: (timestep) =>
-    @canvas.width = @$target.outerWidth()
-    @canvas.height = @$target.outerHeight()
+    @context.setTransform 1, 0, 0, 1, 0, 0
+    @context.clearRect 0, 0, @canvas.width, @canvas.height
     vapor.draw(timestep) for vapor in @_vapors
+    @timer.tick(timestep)
     window.requestAnimationFrame @drawFrame
 
+    
   updateVapors: =>
+    @canvas.width = @$target.outerWidth()
+    @canvas.height = @$target.outerHeight()
     newvapes = @defaultCount() - @_vapors.length
     if newvapes > 0 
       @_vapors.push new Vapor(@canvas, @options) for i in [0...newvapes]
@@ -92,6 +98,7 @@ class VaporAnimation extends jQueryPlugin
       start = @_vapors.length + newvapes
       @_vapors[i].destroy() for i in [start...@_vapors.length]
       @_vapors = @_vapors[0...start]
+
 
   stop: ->
     v.destroy() for v in @_vapors
@@ -106,8 +113,8 @@ class Vapor
  
   reset: (t) ->
     @starttime = t 
-    @angle = Math.random() * 360
-    @rotation_speed = Math.random() - 0.5
+    @angle = Math.floor Math.random() * 360
+    @rotation_speed = Math.floor Math.random() - 0.5
     @start_scale = Math.random() + 1
     @xpos = @startLeft()
     @starty = @startTop(t)
@@ -117,16 +124,25 @@ class Vapor
     t - @starttime
 
   ypos: (t) ->    
-    Math.floor( @starty - @speed * @delta(t) / 1000 )
+    @starty - @speed * @delta(t) / 1000 
    
-  rotation: (t) ->
+  rotation_angle: (t) ->
     @angle + @rotation_speed * @delta(t) / 50
+
+  rotation_rads: (t) ->
+    @rotation_angle(t) * Math.PI/180
+
+  rotation_sin: (t) ->
+    Math.sin @rotation_rads(t)
+
+  rotation_cos: (t) ->
+    Math.cos @rotation_rads(t)
   
   scale: (t) ->
     @start_scale + @delta(t) / 10000
 
   randomPPS: ->
-    Math.random() * (@options.max_speed - @options.min_speed) + @options.min_speed
+    Math.floor Math.random() * (@options.max_speed - @options.min_speed) + @options.min_speed
 
   startTop: (t) ->
     @canvas.height + @height(t)
@@ -149,14 +165,34 @@ class Vapor
   draw: (t) ->
     if @ypos(t) < @endTop(t) or not @starttime
       @reset(t)
-    @context.save()
-    @context.translate @xpos, @ypos(t)
-    @context.rotate @rotation(t) * Math.PI/180
-    @context.drawImage @options.image, -(@width(t)/2), -(@height(t)/2), @width(t), @height(t)
-    @context.restore()
+    @context.setTransform @rotation_cos(t), @rotation_sin(t), -@rotation_sin(t), @rotation_cos(t), @xpos, @ypos(t)
+    @context.drawImage @options.image, -@width(t)/2, -@height(t)/2, @width(t), @height(t)
+  
+  #  @context.save()
+  #  @context.translate @xpos, @ypos(t)
+  #  @context.rotate @rotation_rads(t)
+  #  @context.drawImage @options.image, -(@width(t)/2), -(@height(t)/2), @width(t), @height(t)
+  #  @context.restore()
 
   destroy: ->
 
+class Timer
+  constructor: ->
+    @start_time = false
+    @frame_count = 0
+
+  tick: (t) ->
+    @start_time ||= t
+    @frame_count++
+    if t - @start_time > 1000
+      @frame_rate(t)
+      @start_time = t
+      @frame_count = 0
+
+  frame_rate: (t) ->
+    elapsed = ( t - @start_time ) / 1000
+    rate = @frame_count / elapsed
+    console.log "#{@frame_count} frames in #{elapsed} seconds, #{rate} fps."
 
 $.fn.vapors = (options) ->
   @each ->
